@@ -1,0 +1,35 @@
+{
+  "@odata.context": "https://cloud.uipath.com/redhatnapsdas/RedHatNapsDAsDefault/odata/$metadata#Jobs",
+  "value": [
+    {
+      "Key": "39347905-712b-4613-8305-b9939a72be62",
+      "StartTime": null,
+      "EndTime": null,
+      "State": "Pending",
+      "JobPriority": "Normal",
+      "Source": "Manual",
+      "SourceType": "Manual",
+      "BatchExecutionKey": "97d76145-0948-4c53-a43a-b129aec1f304",
+      "Info": null,
+      "CreationTime": "2020-10-27T13:12:26.34Z",
+      "StartingScheduleId": null,
+      "ReleaseName": "OCR_Data_Extraction_Project",
+      "Type": "Unattended",
+      "InputArguments": null,
+      "OutputArguments": null,
+      "HostMachineName": null,
+      "HasMediaRecorded": false,
+      "PersistenceId": null,
+      "ResumeVersion": null,
+      "StopStrategy": null,
+      "RuntimeType": "Unattended",
+      "RequiresUserInteraction": true,
+      "ReleaseVersionId": null,
+      "EntryPointPath": null,
+      "OrganizationUnitId": 727460,
+      "OrganizationUnitFullyQualifiedName": null,
+      "Reference": "",
+      "Id": 20106813
+    }
+  ]
+}

@@ -15,6 +15,8 @@
  */
 package com.redhat.ba.uipath;
 
+import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 import org.jbpm.process.workitem.core.AbstractLogOrThrowWorkItemHandler;
 import org.jbpm.process.workitem.core.util.RequiredParameterValidator;
 import org.jbpm.process.workitem.core.util.Wid;
@@ -24,6 +26,7 @@ import org.jbpm.process.workitem.core.util.WidResult;
 import org.jbpm.process.workitem.core.util.service.WidAction;
 import org.jbpm.process.workitem.core.util.service.WidAuth;
 import org.jbpm.process.workitem.core.util.service.WidService;
+import org.json.JSONObject;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemManager;
 import org.slf4j.Logger;
@@ -34,19 +37,62 @@ import org.slf4j.LoggerFactory;
  * 
  * @author jbride
  */
+@Wid(widfile="UiPathWorkItem.wid", name="UiPathWorkItem",
+        displayName="UiPathWorkItem",
+        defaultHandler="mvel: new com.redhat.ba.uipath.UiPathOrchestratorWIH()",
+        documentation = "uipath-workitem/index.html",
+        category = "uipath-workitem",
+        icon = "uipath.png",
+        parameters={
+        },
+        results={
+            @WidResult(name="result")
+        },
+        mavenDepends={
+            @WidMavenDepends(group="org.jbpm.contrib", artifact="rdbms-workitem", version="7.30.0.Final-redhat-00003")
+        },
+        serviceInfo = @WidService(category = "rdbms-workitem", description = "${description}",
+                keywords = "",
+                action = @WidAction(title = "RDBMSWorkItem"),
+                authinfo = @WidAuth(required = true, params = {"dbJndiName", "sqlPrefix"},
+                    paramsdescription = {"DataSource JNDI Name", "SQL Statement Prefix"})
+        )
+)
 public class UiPathOrchestratorWIH extends AbstractLogOrThrowWorkItemHandler {
 
-	private static Logger logger = LoggerFactory.getLogger(UiPathOrchestratorWIH.class);
+        private static final String ACTION = "ACTION";
+        private static Logger logger = LoggerFactory.getLogger(UiPathOrchestratorWIH.class);
 
-        private String uipathClientId;
-        private String uipathUserKey;
-
-	public UiPathOrchestratorWIH(String uipathClientId, String uipathUserKey) {
-            this.uipathClientId = uipathClientId;
-            this.uipathUserKey = uipathUserKey;
+	public UiPathOrchestratorWIH() {
 	}
 
         public void executeWorkItem(WorkItem workItem, WorkItemManager wim) {
+            try{
+                Object actionObj = workItem.getParameter(ACTION);
+                if(actionObj != null && StringUtils.isEmpty((String)actionObj)){
+                    String action = (String)actionObj;
+                    if(action.equals(UiPathRobotLifecycle.ACTION_GET_RELEASES)) {
+                        Map<String, JSONObject> releases = UiPathRobotLifecycle.getReleases();
+                        logger.info("executeWorkItem() number of releases = "+releases.size());
+                    } else if(action.equals(UiPathRobotLifecycle.ACTION_START_JOB)){
+                        Object keyObj = workItem.getParameter(UiPathRobotLifecycle.UIPATH_PROCESS_KEY);
+                        if(keyObj != null && StringUtils.isEmpty((String)keyObj)) {
+                            String processReleaseKey = (String)keyObj;
+                            UiPathRobotLifecycle.startJob(processReleaseKey);
+                            logger.info("executeWorkItem() just started UiPath job with id = "+processReleaseKey);
+                        }else {
+                                throw new RuntimeException("executeWorkItem() must pass a String parameter of: "+UiPathRobotLifecycle.UIPATH_PROCESS_KEY);
+                        }
+                    }else {
+                        throw new RuntimeException("executeWorkItem() Value of ACTION parameter is invalid: "+ACTION+" .\n\tValid values as follows: "+UiPathRobotLifecycle.ACTION_VALID_VALUES);
+                    }
+                }else {
+                    throw new RuntimeException("executeWorkItem() must pass a String parameter of: "+ACTION+" with a value from the following list: "+UiPathRobotLifecycle.ACTION_VALID_VALUES);
+                }
+            }catch(IOException | UiPathCommunicationException x){
+                x.printStackTrace();
+                throw new RuntimeException(x);
+            }
         }
 
         public void abortWorkItem(WorkItem wi, WorkItemManager wim) {

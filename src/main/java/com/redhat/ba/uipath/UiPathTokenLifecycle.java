@@ -74,17 +74,17 @@ public class UiPathTokenLifecycle {
     private static Logger logger = LoggerFactory.getLogger(UiPathTokenLifecycle.class.getName());
 
     static {
-        uipathTokenUrl = System.getProperty(UiPathTokenLifecycle.UIPATH_TOKEN_URL, "https://account.uipath.com/oauth/token");
+        uipathTokenUrl = System.getEnv(UiPathTokenLifecycle.UIPATH_TOKEN_URL, "https://account.uipath.com/oauth/token");
 
-        secondsToRefresh = Integer.parseInt(System.getProperty(UIPATH_SECONDS_TO_REFRESH_TOKEN, "10"));
+        secondsToRefresh = Integer.parseInt(System.getEnv(UIPATH_SECONDS_TO_REFRESH_TOKEN, "10"));
 
-        clientId = System.getProperty(UiPathTokenLifecycle.UIPATH_CLIENT_ID);
+        clientId = System.getEnv(UiPathTokenLifecycle.UIPATH_CLIENT_ID);
         if(StringUtils.isEmpty(clientId))
-            throw new RuntimeException("Need to provide system property: "+UiPathTokenLifecycle.UIPATH_CLIENT_ID);
+            throw new RuntimeException("Need to provide env var: "+UiPathTokenLifecycle.UIPATH_CLIENT_ID);
         
-        clientSecret = System.getProperty(UiPathTokenLifecycle.UIPATH_USER_KEY);
+        clientSecret = System.getEnv(UiPathTokenLifecycle.UIPATH_USER_KEY);
         if(StringUtils.isEmpty(clientSecret))
-            throw new RuntimeException("Need to provide system property: "+UiPathTokenLifecycle.UIPATH_USER_KEY);
+            throw new RuntimeException("Need to provide env var: "+UiPathTokenLifecycle.UIPATH_USER_KEY);
     }
 
     public static String getUiPathToken() throws UiPathCommunicationException {
@@ -136,7 +136,7 @@ public class UiPathTokenLifecycle {
 
         }catch(Exception x){
             handleUiPathException(x, response);
-            throw new UiPathCommunicationException();
+            throw new UiPathCommunicationException("UiPath Authentication Problem. Check values of "+UIPATH_CLIENT_ID+ " and "+UIPATH_USER_KEY);
         }
     }
 

@@ -1,3 +1,49 @@
+:numbered:
+:toc: manual
+:toc-placement: preamble
+
+== Tasks
+
+=== Done
+. UiPath Orchestrator 
+.. Create trial account / tenant  via Orchestrator UI
+.. Create "Modern" Folder
+
+.. Identify values for the following
+... UIPATH_USER_KEY
+... UIPATH_CLIENT_ID
+... UIPATH_ACCOUNT_LOGICAL_NAME
+... UIPATH_TENANT_NAME
+... UIPATH_ORG_UNIT_ID
+
+.. Familiarization with Orchestrator API
+... Get Bearer Token
+... Get Releases
+... StartJob using ReleaseKey
+
+. UiPath Robot
+.. Create Windows VM
+.. Install UiPath Studio
+.. Login using same account as registered in Orchestrator
+.. Set Folder in Studio to the same folder created in Orchestrator UI
+.. Create Robot
+.. Test Robot
+.. Publish Robot
+
+. RH-PAM WorkItemHandler
+.. Create UiPathTokenLifecycle.java
+.. Create UiPathRobotLifecycle.java
+
+=== TO-DO
+. Identify how to determine if robot actually executed work
+. Have robot send a payload (JSON representation of OCR scan) to an API 
+. Implement executeWorkItem(...) function using UiPathRobotLifecycle
+. Register WIH in RH-PAM
+. Create RESTful API that accepts JSON payload
+. Create BPMN2 with following tasks:
+.. StartRobotJob
+.. Signal: RobotJobCompleted
+
 
 == Test
 
@@ -7,10 +53,5 @@ $ export UIPATH_USER_KEY=changeme
 $ export UIPATH_ACCOUNT_LOGICAL_NAME=changeme
 $ export UIPATH_TENANT_NAME=changeme
 
-$ mvn clean test \
-      -DUIPATH_CLIENT_ID=$UIPATH_CLIENT_ID \
-      -DUIPATH_USER_KEY=$UIPATH_USER_KEY \
-      -DUIPATH_ACCOUNT_LOGICAL_NAME=$UIPATH_ACCOUNT_LOGICAL_NAME \
-      -DUIPATH_TENANT_NAME=$UIPATH_TENANT_NAME \
-      -DUIPATH_ORG_UNIT_ID=$UIPATH_ORG_UNIT_ID
+$ mvn clean test
 -----

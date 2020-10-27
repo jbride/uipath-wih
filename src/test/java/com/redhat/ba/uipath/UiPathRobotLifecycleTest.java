@@ -15,7 +15,6 @@
  */
 package com.redhat.ba.uipath;
 
-import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Ignore;

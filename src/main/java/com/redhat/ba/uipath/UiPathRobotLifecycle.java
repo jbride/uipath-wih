@@ -45,6 +45,11 @@ public class UiPathRobotLifecycle {
     public static final String UIPATH_ACCOUNT_LOGICAL_NAME = "UIPATH_ACCOUNT_LOGICAL_NAME";
     public static final String UIPATH_TENANT_NAME = "UIPATH_TENANT_NAME";
     public static final String UIPATH_ORG_UNIT_ID = "UIPATH_ORG_UNIT_ID";
+    public static final String UIPATH_PROCESS_KEY = "PROCESS_KEY";
+
+    public static final String ACTION_GET_RELEASES="GET_RELEASES";
+    public static final String ACTION_START_JOB = "START_JOB";
+    public static final String ACTION_VALID_VALUES = ACTION_GET_RELEASES+","+ACTION_START_JOB;
 
     public static final String VALUE = "value";
     public static final String KEY = "Key";
@@ -57,26 +62,25 @@ public class UiPathRobotLifecycle {
     private static String orgUnitId;
 
     static {
-        orchestratorUrl = System.getProperty(UIPATH_PUBLIC_ORCHESTRATOR_URL, "https://cloud.uipath.com/");
+        orchestratorUrl = System.getEnv(UIPATH_PUBLIC_ORCHESTRATOR_URL, "https://cloud.uipath.com/");
 
-        accountLogicalName = System.getProperty(UIPATH_ACCOUNT_LOGICAL_NAME);
+        accountLogicalName = System.getEnv(UIPATH_ACCOUNT_LOGICAL_NAME);
         if(StringUtils.isEmpty(accountLogicalName))
-            throw new RuntimeException("Need to provide system property: "+ UIPATH_ACCOUNT_LOGICAL_NAME);
+            throw new RuntimeException("Need to provide env var: "+ UIPATH_ACCOUNT_LOGICAL_NAME);
 
-        tenantName = System.getProperty(UIPATH_TENANT_NAME);
+        tenantName = System.getEnv(UIPATH_TENANT_NAME);
         if(StringUtils.isEmpty(tenantName))
-            throw new RuntimeException("Need to provide system property: "+ UIPATH_TENANT_NAME);
+            throw new RuntimeException("Need to provide env var: "+ UIPATH_TENANT_NAME);
 
-        orgUnitId = System.getProperty(UIPATH_ORG_UNIT_ID);
+        orgUnitId = System.getEnv(UIPATH_ORG_UNIT_ID);
         if(StringUtils.isEmpty(orgUnitId))
-            throw new RuntimeException("Need to provide system property: "+ UIPATH_ORG_UNIT_ID);
+            throw new RuntimeException("Need to provide env var: "+ UIPATH_ORG_UNIT_ID);
     }
 
-    public static Map<String, JSONObject> getReleases() throws UiPathCommunicationException {
+    public static Map<String, JSONObject> getReleases() throws UiPathCommunicationException, IOException {
 
         StringBuilder releasesUrl = new StringBuilder(orchestratorUrl + accountLogicalName+"/"+tenantName+"/odata/Releases");
         Map<String, JSONObject> releases = new HashMap<String, JSONObject>();
-        try {
             HttpGet httpGet = new HttpGet(releasesUrl.toString());
             httpGet.setHeader("Content-Type", "application/json");
             String token = UiPathTokenLifecycle.getUiPathToken();
@@ -98,18 +102,12 @@ public class UiPathRobotLifecycle {
                 }
             }
 
-        }catch(IOException x){
-            logger.error("getReleases() exception invoking the following Url: "+releasesUrl.toString());
-            x.printStackTrace();
-        }
-
         return releases;
     }
 
-    public static void startJob(String processReleaseKey) {
+    public static void startJob(String processReleaseKey) throws UiPathCommunicationException, IOException {
         StringBuilder startJobUrl = new StringBuilder(orchestratorUrl + accountLogicalName+"/"+tenantName+"/odata/Jobs/UiPath.Server.Configuration.OData.StartJobs");
-        try {
-            HttpPost httpPost = new HttpPost(startJobUrl.toString());
+        HttpPost httpPost = new HttpPost(startJobUrl.toString());
 
             String token = UiPathTokenLifecycle.getUiPathToken();
             httpPost.setHeader("Authorization", "Bearer " + token);
@@ -132,10 +130,6 @@ public class UiPathRobotLifecycle {
             final String responseBody = EntityUtils.toString(getResponse.getEntity());
             httpPost.releaseConnection();
             logger.info("getReleases() statusCode = "+getStatusCode+" : responseBody = "+responseBody);
-
-        }catch(Exception x) {
-
-        }
 
     }
     

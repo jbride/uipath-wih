@@ -55,3 +55,15 @@ $ export UIPATH_TENANT_NAME=changeme
 
 $ mvn clean test
 -----
+
+== Issues
+
+. Upon creation of new project (after import of UiPath Service Task via Admin Console):
++
+-----
+17:19:26,070 WARN  [org.eclipse.jgit.internal.storage.file.RefDirectory] (default task-9) Unable to remove path /opt/kie/data/.niogit/NAPS/UIPathTest.git/logs/refs/remotes/origin: java.nio.file.NoSuchFileException: /opt/kie/data/.niogit/NAPS/UIPathTest.git/logs/refs/remotes/origin
+-----
+
+== UiPath Operator for OCP
+
+. yea I would love to pull them into the ecosystem.  seems like a great way to reinforce the value prop.  plus it would help to solve for one of the big problems with RPA...digital worker sprawl.

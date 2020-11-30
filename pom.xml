@@ -7,12 +7,12 @@
     <parent>
         <groupId>org.jbpm.contrib</groupId>
         <artifactId>workitems</artifactId>
-        <version>7.45.0.Final</version>
+        <version>7.44.0.Final-redhat-00003</version>
     </parent>
 
     <artifactId>uipath-wih</artifactId>
     <name>uipath-wih</name>
-    <version>7.45.0.Final</version>
+    <version>7.44.0.Final-redhat-00003</version>
     <description>UiPath Orchestrator Task.</description>
     <organization>
         <name>Red Hat</name>

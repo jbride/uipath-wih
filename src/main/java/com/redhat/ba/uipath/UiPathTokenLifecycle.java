@@ -66,23 +66,25 @@ public class UiPathTokenLifecycle {
     */
     private static Object[] uiPathTokenArray = new Object[2];
     private static Object syncObj = new Object();
-    private static String uipathTokenUrl;
+    private static String uipathTokenUrl = "https://account.uipath.com/oauth/token";
     private static String clientId;
     private static String clientSecret;
-    private static int secondsToRefresh;
+    private static int secondsToRefresh = 10;
 
     private static Logger logger = LoggerFactory.getLogger(UiPathTokenLifecycle.class.getName());
 
     static {
-        uipathTokenUrl = System.getEnv(UiPathTokenLifecycle.UIPATH_TOKEN_URL, "https://account.uipath.com/oauth/token");
+        if(StringUtils.isNotEmpty(System.getenv(UiPathTokenLifecycle.UIPATH_TOKEN_URL)))
+            uipathTokenUrl = System.getenv(UiPathTokenLifecycle.UIPATH_TOKEN_URL);
 
-        secondsToRefresh = Integer.parseInt(System.getEnv(UIPATH_SECONDS_TO_REFRESH_TOKEN, "10"));
+        if(StringUtils.isNotEmpty(System.getenv(UIPATH_SECONDS_TO_REFRESH_TOKEN)))
+            secondsToRefresh = Integer.parseInt(System.getenv(UIPATH_SECONDS_TO_REFRESH_TOKEN));
 
-        clientId = System.getEnv(UiPathTokenLifecycle.UIPATH_CLIENT_ID);
+        clientId = System.getenv(UiPathTokenLifecycle.UIPATH_CLIENT_ID);
         if(StringUtils.isEmpty(clientId))
             throw new RuntimeException("Need to provide env var: "+UiPathTokenLifecycle.UIPATH_CLIENT_ID);
         
-        clientSecret = System.getEnv(UiPathTokenLifecycle.UIPATH_USER_KEY);
+        clientSecret = System.getenv(UiPathTokenLifecycle.UIPATH_USER_KEY);
         if(StringUtils.isEmpty(clientSecret))
             throw new RuntimeException("Need to provide env var: "+UiPathTokenLifecycle.UIPATH_USER_KEY);
     }

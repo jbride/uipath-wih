@@ -1,5 +1,5 @@
 {
-  "@odata.context": "https://cloud.uipath.com/redhatnapsdas/RedHatNapsDAsDefault/odata/$metadata#Jobs",
+  "@odata.context": "https://cloud.uipath.com/odata/$metadata#Jobs",
   "value": [
     {
       "Key": "39347905-712b-4613-8305-b9939a72be62",

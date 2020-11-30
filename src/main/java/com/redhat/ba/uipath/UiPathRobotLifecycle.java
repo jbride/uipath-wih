@@ -46,6 +46,11 @@ public class UiPathRobotLifecycle {
     public static final String UIPATH_TENANT_NAME = "UIPATH_TENANT_NAME";
     public static final String UIPATH_ORG_UNIT_ID = "UIPATH_ORG_UNIT_ID";
     public static final String UIPATH_PROCESS_KEY = "PROCESS_KEY";
+    public static final String UIPATH_RELEASE_DESCRIPTION = "Description";
+    public static final String UIPATH_ROBOT_ID = "Id";
+    public static final String UIPATH_STRATEGY_SPECIFIC = "Specific";
+    public static final String UIPATH_STRATEGY_MODERN_JOBS_COUNT = "ModernJobsCount";
+    public static final String UIPATH_SOURCE_MANUAL = "Manual";
 
     public static final String ACTION_GET_RELEASES="GET_RELEASES";
     public static final String ACTION_START_JOB = "START_JOB";
@@ -56,80 +61,157 @@ public class UiPathRobotLifecycle {
 
     private static Logger logger = LoggerFactory.getLogger(UiPathRobotLifecycle.class.getName());
 
-    private static String orchestratorUrl;
+    private static String orchestratorUrl = "https://cloud.uipath.com/";
     private static String accountLogicalName;
     private static String tenantName;
     private static String orgUnitId;
 
     static {
-        orchestratorUrl = System.getEnv(UIPATH_PUBLIC_ORCHESTRATOR_URL, "https://cloud.uipath.com/");
+        if(StringUtils.isNotEmpty(System.getenv(UIPATH_PUBLIC_ORCHESTRATOR_URL)))
+            orchestratorUrl = System.getenv(UIPATH_PUBLIC_ORCHESTRATOR_URL);
 
-        accountLogicalName = System.getEnv(UIPATH_ACCOUNT_LOGICAL_NAME);
+        accountLogicalName = System.getenv(UIPATH_ACCOUNT_LOGICAL_NAME);
         if(StringUtils.isEmpty(accountLogicalName))
             throw new RuntimeException("Need to provide env var: "+ UIPATH_ACCOUNT_LOGICAL_NAME);
 
-        tenantName = System.getEnv(UIPATH_TENANT_NAME);
+        tenantName = System.getenv(UIPATH_TENANT_NAME);
         if(StringUtils.isEmpty(tenantName))
             throw new RuntimeException("Need to provide env var: "+ UIPATH_TENANT_NAME);
 
-        orgUnitId = System.getEnv(UIPATH_ORG_UNIT_ID);
+        orgUnitId = System.getenv(UIPATH_ORG_UNIT_ID);
         if(StringUtils.isEmpty(orgUnitId))
             throw new RuntimeException("Need to provide env var: "+ UIPATH_ORG_UNIT_ID);
     }
 
+    /**
+     * 
+     * @return JSONObject that is structured as per the following example:  https://gist.github.com/jbride/1b9b6e03756dfcdf0c63c2b675f910ba
+     * @throws UiPathCommunicationException
+     * @throws IOException
+     */
     public static Map<String, JSONObject> getReleases() throws UiPathCommunicationException, IOException {
 
         StringBuilder releasesUrl = new StringBuilder(orchestratorUrl + accountLogicalName+"/"+tenantName+"/odata/Releases");
         Map<String, JSONObject> releases = new HashMap<String, JSONObject>();
-            HttpGet httpGet = new HttpGet(releasesUrl.toString());
-            httpGet.setHeader("Content-Type", "application/json");
-            String token = UiPathTokenLifecycle.getUiPathToken();
-            httpGet.setHeader("Authorization", "Bearer " + token);
-            HttpClient httpclient = HttpClientBuilder.create().build();
-            HttpResponse getResponse = httpclient.execute(httpGet);
-            final int getStatusCode = getResponse.getStatusLine().getStatusCode();
-            final String responseBody = EntityUtils.toString(getResponse.getEntity());
-            httpGet.releaseConnection();
-            logger.info("getReleases() statusCode = "+getStatusCode+" : responseBody = "+responseBody);
+        HttpGet httpGet = new HttpGet(releasesUrl.toString());
+        httpGet.setHeader("Content-Type", "application/json");
+        String token = UiPathTokenLifecycle.getUiPathToken();
+        httpGet.setHeader("Authorization", "Bearer " + token);
+        HttpClient httpclient = HttpClientBuilder.create().build();
+        HttpResponse getResponse = httpclient.execute(httpGet);
+        final int getStatusCode = getResponse.getStatusLine().getStatusCode();
+        final String responseBody = EntityUtils.toString(getResponse.getEntity());
+        httpGet.releaseConnection();
+        logger.info("getReleases() statusCode = "+getStatusCode+" : responseBody = "+responseBody);
+        JSONObject jsonResponse = new JSONObject(responseBody);
+        JSONArray values = jsonResponse.getJSONArray(VALUE);
+        if(values.length() > 0) {
+            for(int i=0; i < values.length(); i++) {
+                JSONObject value = values.getJSONObject(i);
+                String key = StringUtils.strip(value.getString(KEY), "\"");
+                logger.info("getReleases() adding release to map with key = "+key);
+                releases.put(key, value);
+            }
+        }
+
+        return releases;
+    }
+
+    /**
+     * 
+     * @param robotNameFilter
+     * @return
+     * @throws UiPathCommunicationException
+     * @throws UiPathBusinessException
+     * @throws IOException
+     */
+    public static Map<String, JSONObject> getRobots(String robotNameFilter) throws UiPathCommunicationException, UiPathBusinessException, IOException {
+        StringBuilder robotsUrl = new StringBuilder(orchestratorUrl + accountLogicalName+"/"+tenantName+"/odata/Robots");
+        Map<String, JSONObject> robots = new HashMap<String, JSONObject>();
+        HttpGet httpGet = new HttpGet(robotsUrl.toString());
+        httpGet.setHeader("Content-Type", "application/json");
+        String token = UiPathTokenLifecycle.getUiPathToken();
+        httpGet.setHeader("Authorization", "Bearer " + token);
+        httpGet.setHeader("X-UIPATH-OrganizationUnitId", orgUnitId);
+        HttpClient httpclient = HttpClientBuilder.create().build();
+        HttpResponse getResponse = httpclient.execute(httpGet);
+        final int statusCode = getResponse.getStatusLine().getStatusCode();
+        final String responseBody = EntityUtils.toString(getResponse.getEntity());
+        httpGet.releaseConnection();
+        logger.info("getRobots() statusCode = "+statusCode+" : responseBody = "+responseBody);
+        if(statusCode == 200) {
             JSONObject jsonResponse = new JSONObject(responseBody);
             JSONArray values = jsonResponse.getJSONArray(VALUE);
             if(values.length() > 0) {
                 for(int i=0; i < values.length(); i++) {
                     JSONObject value = values.getJSONObject(i);
-                    String key = StringUtils.strip(value.getString(KEY), "\"");
-                    logger.info("getReleases() adding release to map with key = "+key);
-                    releases.put(key, value);
+                    String key = StringUtils.strip(value.getString(UIPATH_ROBOT_ID), "\"");
+                    logger.info("getRobots() adding robot to map with key = "+key);
+                    robots.put(key, value);
                 }
             }
-
-        return releases;
+            return robots;
+        }else {
+            StringBuilder sBuilder = new StringBuilder();
+            sBuilder.append("getRobots() response statusCode = "+statusCode);
+            sBuilder.append("\n\tresponseBody = "+responseBody);
+            sBuilder.append("\n\taccountLogicalName = "+accountLogicalName);
+            sBuilder.append("\n\ttenantName = "+tenantName);
+            throw new UiPathBusinessException(sBuilder.toString());
+        }
     }
+    
 
-    public static void startJob(String processReleaseKey) throws UiPathCommunicationException, IOException {
+    /**
+     * 
+     * @param processReleaseKey
+     * @param strategy                                     : Specific or ModernJobsCount
+     * @param commaDelimitedRobotIds
+     * @param jobsCount
+     * @param source                                       : Manual
+     * @throws UiPathCommunicationException
+     * @throws UiPathBusinessException
+     * @throws IOException
+     */
+    public static void startJob(String processReleaseKey, String strategy, String commaDelimitedRobotIds, int jobsCount, String source) throws UiPathCommunicationException, UiPathBusinessException, IOException {
         StringBuilder startJobUrl = new StringBuilder(orchestratorUrl + accountLogicalName+"/"+tenantName+"/odata/Jobs/UiPath.Server.Configuration.OData.StartJobs");
         HttpPost httpPost = new HttpPost(startJobUrl.toString());
 
-            String token = UiPathTokenLifecycle.getUiPathToken();
-            httpPost.setHeader("Authorization", "Bearer " + token);
-            httpPost.setHeader("X-UIPATH-OrganizationUnitId", orgUnitId);
-            HttpClient httpclient = HttpClientBuilder.create().build();
+        String token = UiPathTokenLifecycle.getUiPathToken();
+        httpPost.setHeader("Authorization", "Bearer " + token);
+        httpPost.setHeader("X-UIPATH-OrganizationUnitId", orgUnitId);
+        HttpClient httpclient = HttpClientBuilder.create().build();
 
-            httpPost.setHeader("Content-Type", "application/json");
-            StringBuilder startJobEntity = new StringBuilder();
-            startJobEntity.append("{\"startInfo\":");
-            startJobEntity.append("{\"ReleaseKey\":\""+processReleaseKey+"\",");
-            startJobEntity.append("\"RobotIds\":[],");
-            startJobEntity.append("\"JobsCount\":1,");
-            startJobEntity.append("\"JobPriority\":\"Normal\",");
-            startJobEntity.append("\"Strategy\":\"ModernJobsCount\"");
-            startJobEntity.append("}}");
-            httpPost.setEntity(new StringEntity(startJobEntity.toString()));
+        httpPost.setHeader("Content-Type", "application/json");
+        StringBuilder startJobEntity = new StringBuilder();
+        startJobEntity.append("{\"startInfo\":");
+        startJobEntity.append("{\"ReleaseKey\":\""+processReleaseKey+"\",");
+        startJobEntity.append("\"Strategy\":\""+strategy+"\",");
+        startJobEntity.append("\"RobotIds\":["+commaDelimitedRobotIds+"],");
+        startJobEntity.append("\"JobsCount\":"+jobsCount+",");
+        //startJobEntity.append("\"JobPriority\":\"Normal\",");
+        startJobEntity.append("\"Source\":\""+source+"\"");
+        startJobEntity.append("}}");
+        httpPost.setEntity(new StringEntity(startJobEntity.toString()));
 
-            HttpResponse getResponse = httpclient.execute(httpPost);
-            final int getStatusCode = getResponse.getStatusLine().getStatusCode();
-            final String responseBody = EntityUtils.toString(getResponse.getEntity());
-            httpPost.releaseConnection();
-            logger.info("getReleases() statusCode = "+getStatusCode+" : responseBody = "+responseBody);
+        HttpResponse getResponse = httpclient.execute(httpPost);
+        final int statusCode = getResponse.getStatusLine().getStatusCode();
+        final String responseBody = EntityUtils.toString(getResponse.getEntity());
+        httpPost.releaseConnection();
+        logger.info("startJob() statusCode = "+statusCode+" : responseBody = "+responseBody);
+
+        if(statusCode != 200) {
+            StringBuilder sBuilder = new StringBuilder();
+            sBuilder.append("startJob() response statusCode = "+statusCode);
+            sBuilder.append("\n\tresponseBody = "+responseBody);
+            sBuilder.append("\n\tprocessReleaseKey = "+processReleaseKey);
+            sBuilder.append("\n\taccountLogicalName = "+accountLogicalName);
+            sBuilder.append("\n\ttenantName = "+tenantName);
+            sBuilder.append("\n\tstrategy = "+strategy);
+            sBuilder.append("\n\tcommaDelimitedRobotIds = "+commaDelimitedRobotIds);
+            sBuilder.append("\n\tjobsCount = "+jobsCount);
+            throw new UiPathBusinessException(sBuilder.toString());
+        }
 
     }
     

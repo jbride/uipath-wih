@@ -15,6 +15,7 @@
  */
 package com.redhat.ba.uipath;
 
+import java.io.IOException;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.jbpm.process.workitem.core.AbstractLogOrThrowWorkItemHandler;
@@ -44,24 +45,25 @@ import org.slf4j.LoggerFactory;
         category = "uipath-workitem",
         icon = "uipath.png",
         parameters={
+            @WidParameter(name=UiPathOrchestratorWIH.ACTION, type="new StringDataType()", runtimeType="String", required = true),
+            @WidParameter(name=UiPathRobotLifecycle.UIPATH_PROCESS_KEY, type="new StringDataType()", runtimeType="String", required = false)
         },
         results={
             @WidResult(name="result")
         },
         mavenDepends={
-            @WidMavenDepends(group="org.jbpm.contrib", artifact="rdbms-workitem", version="7.30.0.Final-redhat-00003")
         },
-        serviceInfo = @WidService(category = "rdbms-workitem", description = "${description}",
+        serviceInfo = @WidService(category = "uipath-workitem", description = "${description}",
                 keywords = "",
-                action = @WidAction(title = "RDBMSWorkItem"),
-                authinfo = @WidAuth(required = true, params = {"dbJndiName", "sqlPrefix"},
-                    paramsdescription = {"DataSource JNDI Name", "SQL Statement Prefix"})
+                action = @WidAction(title = "UiPathWorkItem"),
+                authinfo = @WidAuth(required = false, params = {},
+                    paramsdescription = {})
         )
 )
 public class UiPathOrchestratorWIH extends AbstractLogOrThrowWorkItemHandler {
 
-        private static final String ACTION = "ACTION";
-        private static Logger logger = LoggerFactory.getLogger(UiPathOrchestratorWIH.class);
+    public static final String ACTION = "ACTION";
+    private static Logger logger = LoggerFactory.getLogger(UiPathOrchestratorWIH.class);
 
 	public UiPathOrchestratorWIH() {
 	}
@@ -78,7 +80,9 @@ public class UiPathOrchestratorWIH extends AbstractLogOrThrowWorkItemHandler {
                         Object keyObj = workItem.getParameter(UiPathRobotLifecycle.UIPATH_PROCESS_KEY);
                         if(keyObj != null && StringUtils.isEmpty((String)keyObj)) {
                             String processReleaseKey = (String)keyObj;
-                            UiPathRobotLifecycle.startJob(processReleaseKey);
+                            int jobsCount = 1;
+                            StringBuilder robotIdBuilder = new StringBuilder();
+                            UiPathRobotLifecycle.startJob(processReleaseKey, UiPathRobotLifecycle.UIPATH_STRATEGY_SPECIFIC, robotIdBuilder.toString(), jobsCount, UiPathRobotLifecycle.UIPATH_SOURCE_MANUAL);
                             logger.info("executeWorkItem() just started UiPath job with id = "+processReleaseKey);
                         }else {
                                 throw new RuntimeException("executeWorkItem() must pass a String parameter of: "+UiPathRobotLifecycle.UIPATH_PROCESS_KEY);
@@ -89,7 +93,7 @@ public class UiPathOrchestratorWIH extends AbstractLogOrThrowWorkItemHandler {
                 }else {
                     throw new RuntimeException("executeWorkItem() must pass a String parameter of: "+ACTION+" with a value from the following list: "+UiPathRobotLifecycle.ACTION_VALID_VALUES);
                 }
-            }catch(IOException | UiPathCommunicationException x){
+            }catch(IOException | UiPathCommunicationException | UiPathBusinessException x){
                 x.printStackTrace();
                 throw new RuntimeException(x);
             }
